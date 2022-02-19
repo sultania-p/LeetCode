@@ -62,16 +62,15 @@ BEGIN
         /* Write your T-SQL query statement below. */
 		declare @salary int
 		
-        If @N = 1
-            begin
-            SET  @salary = (select max(salary) from employee)
-            end 
-        else if @N = 2
-            begin
-            set @salary = (select max(salary) from employee where salary < (select max(salary) from employee)  )      
-            end
+		select @salary = sq1.salary from 
+		(
+			select distinct
+            salary, dense_rank() over(order by salary desc) as [rank]
+            from Employee
+		) sq1 where sq1.[rank] = @n
+
 return @salary
 
 END;
 
-select [dbo].[getNthHighestSalary](3) as getNthHighestSalary 
+select [dbo].[getNthHighestSalary](4) as getNthHighestSalary

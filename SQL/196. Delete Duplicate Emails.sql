@@ -57,7 +57,7 @@ delete from Person where id in
 		) and id in (select max(id) from Person group by email)
 )
 
-2nd approach
+--2nd approach
 
 select * from Person P1 where P1.id not in
 (

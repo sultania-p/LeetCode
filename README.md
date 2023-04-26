@@ -1,2 +1,3 @@
 # LeetCode
-LeetCode Problems - Python, SQL
+
+Collection of LeetCode questions to ace the coding interview! - Created using LeetHub

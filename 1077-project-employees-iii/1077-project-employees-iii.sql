@@ -1,4 +1,5 @@
 # Write your MySQL query statement below
+/*
 with cte_all_emp as (
 	select 
 		p.project_id,
@@ -13,3 +14,16 @@ with cte_all_emp as (
 select 
 	p.project_id, p.employee_id
 from cte_all_emp p join cte_exp_max c on p.project_id=c.project_id and p.experience_years=exp_max
+*/
+
+# easy way...
+select sq.project_id, sq.employee_id
+from (
+	select 
+		p.project_id,
+		p.employee_id,
+		e.experience_years,
+		rank() over (partition by project_id order by experience_years desc) rn
+	from project p
+	join employee e on p.employee_id=e.employee_id
+) sq where sq.rn=1

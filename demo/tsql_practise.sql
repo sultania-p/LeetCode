@@ -111,3 +111,90 @@ begin
 	close empcur;
 	deallocate empcur;
 end
+
+-- 
+--Stored Procedure - Using Input and Output Paramters
+alter procedure sp_SampleEmpProc @empid int, @name varchar(20) output, @salary numeric(10,2) output 
+as
+begin
+	select @name = FirstName, @salary = Salary
+	from tbl_employees
+	where EmpId = @empid;
+end;
+
+begin
+	declare @empname varchar(20);
+	declare @empsalary numeric(10,2);
+	
+	exec sp_SampleEmpProc 1, @empname output, @empsalary output
+	print @empname + ' earns salary of ' + cast(@empsalary as varchar)
+	
+end
+
+---
+--Functions - Must return a value, Cannot have expcetoinal handling, Can have Select and Group
+create function fn_SampleAmount (@amount numeric(10,2)) returns numeric(10,2)
+as
+begin
+	return @amount * 0.1
+end;
+
+begin
+	select	EmpId, FirstName, Salary, dbo.fn_SampleAmount(Salary) as TaxAmount
+	from tbl_employees
+end
+
+--
+-- Triggers- Donot need to invoke, rather called implicitly
+-- WHen DDL, DML, Login etc happen triggers are invoked
+-- Magic Tables-- Inserted and Deleted
+select * from tbl_employees
+
+alter trigger EmpSalCheck on tbl_Employees for update
+as
+begin
+	declare @oldsalary numeric(10,2)
+	declare @newsalary numeric(10,2)
+
+	select @oldsalary = Salary from deleted
+	select @newsalary = Salary from inserted
+
+	if @oldsalary > @newsalary
+		begin
+			print 'Old Salary (' + cast(@oldsalary as varchar) + ')' + 'cannot be greater than new salary (' + cast(@newsalary as varchar) + ')' 
+			rollback;
+		end
+end
+
+update tbl_employees set Salary = Salary + 1 
+
+create trigger DeleteCheck on tbl_Employees for delete
+as
+begin
+	declare @count int;
+
+	select @count = count(*) from deleted
+
+	if @count > 1
+		begin
+			print 'Cannot delete more than 1 record at a time'
+			Rollback
+		end
+end
+
+delete from tbl_employees
+
+alter trigger InsertCheck on tbl_Employees for insert
+as
+begin
+	declare @count int;
+
+	select @count = count(*) from inserted where Department <= 0
+	if @count >= 1
+		begin
+			print 'Cannot insert department with invalid department id'
+			rollback;
+		end
+end
+
+insert into tbl_employees values (6, 'Test', '1000', 40)

@@ -18,10 +18,8 @@ class Solution:
             # check if the last index is not getting out of bound
             if i+1 < len(s) and set[s[i]] < set[s[i+1]]:
                 total += set[s[i]] * -1
-                # print(total)
             else:
                 total += set[s[i]]
-                # print(total)
             i += 1
 
         return total

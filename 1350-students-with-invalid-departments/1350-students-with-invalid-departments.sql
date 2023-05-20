@@ -1,6 +1,9 @@
 /* Write your T-SQL query statement below */
+
+select id, name from Students 
+EXCEPT
 select 
 	S.id,
 	S.name
 from Students S
-where s.department_id not in (select id from Departments)
+join Departments D on S.department_id = D.id

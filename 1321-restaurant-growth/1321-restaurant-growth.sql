@@ -1,18 +1,20 @@
 /* Write your T-SQL query statement below */
-select visited_on, amount, average_amount 
-from 
-(
-	select 
+
+with cte1 as (
+select
 	visited_on,
-	sum(amount) over(order by visited_on rows between 6 preceding and current row) as amount,
-	cast(round(sum(amount) over(order by visited_on rows between 6 preceding and current row) * 1.00 / 7, 2) as decimal(8,2)) as average_amount,
-	rank() over (order by visited_on asc) rn
-	from (
-		select
-			c1.visited_on,
-			sum(amount) as amount
-		from Customer c1
-		group by visited_on
-	) sq1
-) sq2 where sq2.rn >=7
-order by 1
+	sum(amount) as total_amount
+FROM customer 
+group by visited_on ),
+
+cte2 as (
+select
+	visited_on,
+	sum(total_amount) over(order by visited_on rows between 6 preceding and current row) as amount,
+	cast(ROUND(avg(total_amount * 1.00) over(order by visited_on rows between 6 preceding and current row), 2) as decimal(8,2)) as average_amount
+from cte1 )
+
+select 
+	*
+from cte2
+where datediff(day, (select min(visited_on) from cte2), visited_on) >= 6

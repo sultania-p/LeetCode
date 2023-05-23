@@ -1,14 +1,10 @@
 /* Write your T-SQL query statement below */
-with cte1 as (
-	SELECT
-		*,datename(weekday, order_date) as week_day
-	FROM ORDERS
-), cte2 as 
+with cte2 as 
 (
 	select
-		item_id,week_day,sum(quantity) as total_quantity
-	from cte1
-	group by item_id, week_day
+		item_id,datename(weekday, order_date) as week_day, sum(quantity) as total_quantity
+	from Orders
+	group by item_id, datename(weekday, order_date)
 ) , cte3 as 
 (
 select
@@ -26,7 +22,6 @@ select
 	SUM(case when week_day='Friday' then total_quantity else 0 end)  as 'Friday',
 	SUM(case when week_day='Saturday' then total_quantity else 0 end)  as 'Saturday',
 	SUM(case when week_day='Sunday' then total_quantity else 0 end)  as 'Sunday'
-from 
-cte3
+from  cte3
 group by category
 order by Category

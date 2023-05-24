@@ -1,10 +1,12 @@
 /* Write your T-SQL query statement below */
-select
+with cte1 as 
+	(select distinct * 
+	from Activities
+), cte2 as (
+	select
 		sell_date,
 		count(distinct product) as num_sold,
 		STRING_AGG(product, ',') within group (order by product asc)  as products
-	from (select distinct * 
-			from Activities
-		) sq
+	from cte1
 	group by sell_date
-	order by sell_date
+) select * from cte2

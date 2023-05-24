@@ -7,7 +7,7 @@ with cte as (
 		sum(price*quantity) as sales
 	from Orders O
 	join product P on O.product_id=p.product_id
-	--where order_date between '2020-06-01' and '2020-07-31'
+	where order_date between '2020-06-01' and '2020-07-31'
 	group by O.customer_id, month(order_date), year(order_date)
 )
 select 

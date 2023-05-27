@@ -2,15 +2,16 @@
 
 with cte_order as (
 	select
-		customer_id,
+		name as customer_name,
+		O.customer_id,
 		order_id,
 		order_date,
-		ROW_NUMBER() over (partition by customer_id order by order_date desc) rn
-	from Orders
+		ROW_NUMBER() over (partition by O.customer_id order by order_date desc) rn
+	from Orders O
+	join Customers c on o.customer_id=c.customer_id
 )
 select
-	name as customer_name, ct.customer_id, order_id, order_date
+	customer_name, ct.customer_id, order_id, order_date
 from cte_order ct
-join Customers c on ct.customer_id=c.customer_id
 where rn <= 3
-order by name, ct.customer_id, order_date desc
+order by customer_name, ct.customer_id, order_date desc

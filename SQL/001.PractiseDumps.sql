@@ -1935,3 +1935,170 @@ select
 	count(1) as total
 from cte group by product_name, sale_date
 	order by product_name, sale_date
+
+Create table  Customers (customer_id int, name varchar(10))
+Create table  Orders (order_id int, order_date date, customer_id int, product_id int)
+Create table  Products (product_id int, product_name varchar(20), price int)
+DROP table Customers
+insert into Customers (customer_id, name) values ('1', 'Winston')
+insert into Customers (customer_id, name) values ('2', 'Jonathan')
+insert into Customers (customer_id, name) values ('3', 'Annabelle')
+insert into Customers (customer_id, name) values ('4', 'Marwan')
+insert into Customers (customer_id, name) values ('5', 'Khaled')
+DROP table Orders
+insert into Orders (order_id, order_date, customer_id, product_id) values ('1', '2020-07-31', '1', '1')
+insert into Orders (order_id, order_date, customer_id, product_id) values ('2', '2020-7-30', '2', '2')
+insert into Orders (order_id, order_date, customer_id, product_id) values ('3', '2020-08-29', '3', '3')
+insert into Orders (order_id, order_date, customer_id, product_id) values ('4', '2020-07-29', '4', '1')
+insert into Orders (order_id, order_date, customer_id, product_id) values ('5', '2020-06-10', '1', '2')
+insert into Orders (order_id, order_date, customer_id, product_id) values ('6', '2020-08-01', '2', '1')
+insert into Orders (order_id, order_date, customer_id, product_id) values ('7', '2020-08-01', '3', '1')
+insert into Orders (order_id, order_date, customer_id, product_id) values ('8', '2020-08-03', '1', '2')
+insert into Orders (order_id, order_date, customer_id, product_id) values ('9', '2020-08-07', '2', '3')
+insert into Orders (order_id, order_date, customer_id, product_id) values ('10', '2020-07-15', '1', '2')
+DROP table Products
+insert into Products (product_id, product_name, price) values ('1', 'keyboard', '120')
+insert into Products (product_id, product_name, price) values ('2', 'mouse', '80')
+insert into Products (product_id, product_name, price) values ('3', 'screen', '600')
+insert into Products (product_id, product_name, price) values ('4', 'hard disk', '450')
+--
+with cte_orders as 
+(
+	select
+		o.product_id,
+		o.order_id,
+		o.order_date,
+		dense_rank() over(partition by o.product_id order by order_date desc) rn
+	from Orders O
+)
+select
+	p.product_name,
+	o.product_id,
+	order_id,
+	order_date
+from cte_orders o
+join Products P on o.product_id=p.product_id
+where rn = 1
+order by p.product_name, o.product_id, o.order_id 
+
+Create table  Users (user_id int, user_name varchar(20), credit int)
+Create table  Transactions (trans_id int, paid_by int, paid_to int, amount int, transacted_on date)
+DROP table Users
+insert into Users (user_id, user_name, credit) values ('1', 'Moustafa', '100')
+insert into Users (user_id, user_name, credit) values ('2', 'Jonathan', '200')
+insert into Users (user_id, user_name, credit) values ('3', 'Winston', '10000')
+insert into Users (user_id, user_name, credit) values ('4', 'Luis', '800')
+DROP table Transactions
+insert into Transactions (trans_id, paid_by, paid_to, amount, transacted_on) values ('1', '1', '3', '400', '2020-08-01')
+insert into Transactions (trans_id, paid_by, paid_to, amount, transacted_on) values ('2', '3', '2', '500', '2020-08-02')
+insert into Transactions (trans_id, paid_by, paid_to, amount, transacted_on) values ('3', '2', '1', '200', '2020-08-03')
+--
+with cte_tran as 
+(
+	select
+		paid_by as user_id,
+		-1 * amount as amount
+	from Transactions D
+	UNION ALL
+	select
+		paid_to as user_id,
+		amount
+	from Transactions C
+), cte_total as 
+(
+	select
+		user_id,
+		sum(amount) as tran_amount
+	from cte_tran
+	group by user_id
+)
+select
+	U.user_id,
+	U.user_name,
+	U.credit + isnull(C.tran_amount, 0) as credit,
+	case when U.credit + isnull(C.tran_amount, 0) < 0 then 'Yes' else 'No' end as credit_limit_breached
+from Users U
+left join cte_total c on u.user_id=c.user_id
+
+Create table Orders (order_id int, order_date date, customer_id int, invoice int)
+DROP table Orders
+insert into Orders (order_id, order_date, customer_id, invoice) values ('1', '2020-09-15', '1', '30')
+insert into Orders (order_id, order_date, customer_id, invoice) values ('2', '2020-09-17', '2', '90')
+insert into Orders (order_id, order_date, customer_id, invoice) values ('3', '2020-10-06', '3', '20')
+insert into Orders (order_id, order_date, customer_id, invoice) values ('4', '2020-10-20', '3', '21')
+insert into Orders (order_id, order_date, customer_id, invoice) values ('5', '2020-11-10', '1', '10')
+insert into Orders (order_id, order_date, customer_id, invoice) values ('6', '2020-11-21', '2', '15')
+insert into Orders (order_id, order_date, customer_id, invoice) values ('7', '2020-12-01', '4', '55')
+insert into Orders (order_id, order_date, customer_id, invoice) values ('8', '2020-12-03', '4', '77')
+insert into Orders (order_id, order_date, customer_id, invoice) values ('9', '2021-01-07', '3', '31')
+insert into Orders (order_id, order_date, customer_id, invoice) values ('10', '2021-01-15', '2', '20')
+
+--
+
+select 
+	format(order_date, 'yyyy-MM') as month,
+	count(distinct order_id) as order_count,
+	count(distinct customer_id) as customer_count
+from Orders
+where invoice > 20
+group by format(order_date, 'yyyy-MM')
+
+Create table  Warehouse (name varchar(50), product_id int, units int)
+Create table  Products (product_id int, product_name varchar(50), Width int,Length int,Height int)
+Truncate table Warehouse
+insert into Warehouse (name, product_id, units) values ('LCHouse1', '1', '1')
+insert into Warehouse (name, product_id, units) values ('LCHouse1', '2', '10')
+insert into Warehouse (name, product_id, units) values ('LCHouse1', '3', '5')
+insert into Warehouse (name, product_id, units) values ('LCHouse2', '1', '2')
+insert into Warehouse (name, product_id, units) values ('LCHouse2', '2', '2')
+insert into Warehouse (name, product_id, units) values ('LCHouse3', '4', '1')
+DROP table Products
+insert into Products (product_id, product_name, Width, Length, Height) values ('1', 'LC-TV', '5', '50', '40')
+insert into Products (product_id, product_name, Width, Length, Height) values ('2', 'LC-KeyChain', '5', '5', '5')
+insert into Products (product_id, product_name, Width, Length, Height) values ('3', 'LC-Phone', '2', '10', '10')
+insert into Products (product_id, product_name, Width, Length, Height) values ('4', 'LC-T-Shirt', '4', '10', '20')
+--
+
+select 
+	name as warehouse_name,
+	SUM(units * sq.volume) as volume
+from Warehouse w join 
+(
+	select
+		product_id,
+		product_name,
+		(width * length * height) as volume
+	from Products
+) sq on w.product_id= sq.product_id
+group by name
+
+Create table  Visits(visit_id int, customer_id int)
+Create table  Transactions(transaction_id int, visit_id int, amount int)
+Truncate table Visits
+insert into Visits (visit_id, customer_id) values ('1', '23')
+insert into Visits (visit_id, customer_id) values ('2', '9')
+insert into Visits (visit_id, customer_id) values ('4', '30')
+insert into Visits (visit_id, customer_id) values ('5', '54')
+insert into Visits (visit_id, customer_id) values ('6', '96')
+insert into Visits (visit_id, customer_id) values ('7', '54')
+insert into Visits (visit_id, customer_id) values ('8', '54')
+DROP table Transactions
+insert into Transactions (transaction_id, visit_id, amount) values ('2', '5', '310')
+insert into Transactions (transaction_id, visit_id, amount) values ('3', '5', '300')
+insert into Transactions (transaction_id, visit_id, amount) values ('9', '5', '200')
+insert into Transactions (transaction_id, visit_id, amount) values ('12', '1', '910')
+insert into Transactions (transaction_id, visit_id, amount) values ('13', '2', '970')
+--
+with cte as (
+select
+	V.visit_id,
+	customer_id,
+	transaction_id
+from Visits V
+left join Transactions T on V.visit_id=T.visit_id
+)
+select customer_id, count(1) as count_no_trans
+from cte 
+where transaction_id is null
+group by customer_id
+order by 2 desc

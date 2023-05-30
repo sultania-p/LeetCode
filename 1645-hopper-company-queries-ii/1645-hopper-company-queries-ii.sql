@@ -28,7 +28,7 @@ cte_driver_cnt as (
 cte_accepted_rides as (
 	select 
 		month(r.requested_at) as [month],
-			count(distinct driver_id) as accepted_rides
+			count(distinct driver_id) as working_drivers
 		from AcceptedRides  AR
 		join Rides R on AR.ride_id=R.ride_id
 		where year(R.requested_at) = 2020 and month(R.requested_at) between 1 and 12
@@ -37,7 +37,7 @@ cte_accepted_rides as (
 select
 	dc.[month],
 	case when active_drivers = 0 then 0.00 
-		else cast(ROUND((isnull(accepted_rides, 0) * 1.00 / active_drivers) * 100, 2) as decimal(5,2)) 
+		else cast(ROUND((isnull(working_drivers, 0) * 1.00 / active_drivers) * 100, 2) as decimal(5,2)) 
 	end as working_percentage 
 from cte_driver_cnt dc
 left join cte_accepted_rides ar on dc.month=ar.month

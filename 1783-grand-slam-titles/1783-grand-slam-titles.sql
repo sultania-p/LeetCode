@@ -1,21 +1,19 @@
 /* Write your T-SQL query statement below */
 with cte_tournament as (
-	select
-		year, Wimbledon as player_id
-	from Championships 
-	UNION ALL
-	select
-		year, Fr_open as player_id
-	from Championships 
-	UNION ALL
-	select
-		year, US_open as player_id
-	from Championships 
-	UNION ALL
-	select
-		year, Au_open as player_id
-	from Championships
-)
+	select tournament, player_id 
+	from
+	(	select
+			wimbledon,
+			fr_open,
+			US_open,
+			Au_open
+		from Championships
+	) P
+	UNPIVOT
+	(
+		player_id for tournament in (wimbledon, fr_open, US_open, Au_open)
+	) as upvt
+) 
 select 
 	C.player_id,
 	player_name,

@@ -2607,3 +2607,4 @@ select
 from cte
 group by person1, person2
 
+

@@ -2607,3 +2607,1036 @@ select
 from cte
 group by person1, person2
 
+--
+with cte_interval as (
+	select 
+		user_id,
+		visit_date,
+		isnull(LEAD(visit_date, 1) over (partition by user_id order by visit_date), '2021-01-01') as nxt_date
+	from UserVisits
+) 
+select 
+	user_id, 
+	max(DATEDIFF(day, visit_date, nxt_date)) as biggest_window
+from cte_interval
+group by user_id
+order by user_id
+
+--
+Create table Boxes (box_id int, chest_id int, apple_count int, orange_count int)
+Create table Chests (chest_id int, apple_count int, orange_count int)
+Truncate table Boxes
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('2', null, '6', '15')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('18', '14', '4', '15')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('19', '3', '8', '4')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('12', '2', '19', '20')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('20', '6', '12', '9')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('8', '6', '9', '9')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('3', '14', '16', '7')
+Truncate table Chests
+insert into Chests (chest_id, apple_count, orange_count) values ('6', '5', '6')
+insert into Chests (chest_id, apple_count, orange_count) values ('14', '20', '10')
+insert into Chests (chest_id, apple_count, orange_count) values ('2', '8', '8')
+insert into Chests (chest_id, apple_count, orange_count) values ('3', '19', '4')
+insert into Chests (chest_id, apple_count, orange_count) values ('16', '19', '19')
+--
+select sum(apple_count) as apple_count, sum(orange_count) as orange_count
+from (
+	select
+		isnull(b.apple_count, 0) + isnull(c.apple_count, 0) as apple_count,
+		isnull(b.orange_count, 0) + isnull(c.orange_count, 0) as orange_count
+	from Boxes B
+	left join Chests C on B.chest_id=C.chest_id
+) sq 
+--
+Create table  Followers(user_id int, follower_id int)
+Truncate table Followers
+insert into Followers (user_id, follower_id) values ('0', '1')
+insert into Followers (user_id, follower_id) values ('1', '0')
+insert into Followers (user_id, follower_id) values ('2', '0')
+insert into Followers (user_id, follower_id) values ('2', '1')
+--
+
+select
+	user_id,
+	count(follower_id) as followers_count
+from Followers F
+group by user_id
+order by 1
+
+--
+--Create table Employees(employee_id int, name varchar(20), reports_to int, age int)
+--DROP table Employees
+--insert into Employees (employee_id, name, reports_to, age) values ('9', 'Hercy', Null , '43')
+--insert into Employees (employee_id, name, reports_to, age) values ('6', 'Alice', '9', '41')
+--insert into Employees (employee_id, name, reports_to, age) values ('4', 'Bob', '9', '36')
+--insert into Employees (employee_id, name, reports_to, age) values ('2', 'Winston', Null, '37')
+
+--
+with cte as (
+	select
+		E.age as employee_age,
+		M.employee_id as manager_id,
+		M.name as manager_name
+	from Employees E
+	left join Employees M on M.employee_id = E.reports_to
+	where M.employee_id is not null
+)
+select 
+	manager_id as employee_id,
+	manager_name as name,
+	count(1) as reports_count,
+	cast(ROUND(avg(employee_age * 1.00), 0) as int) as average_age 
+from cte
+group by manager_id, manager_name
+order by manager_id
+
+--
+	select
+		M.employee_id,
+		M.name,
+		count(1) as reports_count,
+		cast(ROUND(avg(E.age * 1.00), 0) as int) as average_age 
+	from Employees E
+	left join Employees M on M.employee_id = E.reports_to
+	where M.employee_id is not null
+	group by M.employee_id, M.name
+	order by M.employee_id
+
+--Create table  Employees(emp_id int, event_day date, in_time int, out_time int)
+--DROP table Employees
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('1', '2020-11-28', '4', '32')
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('1', '2020-11-28', '55', '200')
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('1', '2020-12-3', '1', '42')
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('2', '2020-11-28', '3', '33')
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('2', '2020-12-9', '47', '74')
+
+select
+	event_day as day,
+	emp_id,
+	sum(out_time - in_time) as total_time
+from Employees
+group by 	emp_id, event_day
+
+--Create table  LogInfo (account_id int, ip_address int, login datetime, logout datetime)
+--Truncate table LogInfo
+--insert into LogInfo (account_id, ip_address, login, logout) values ('1', '1', '2021-02-01 09:00:00', '2021-02-01 09:30:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('1', '2', '2021-02-01 08:00:00', '2021-02-01 11:30:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('2', '6', '2021-02-01 20:30:00', '2021-02-01 22:00:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('2', '7', '2021-02-02 20:30:00', '2021-02-02 22:00:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('3', '9', '2021-02-01 16:00:00', '2021-02-01 16:59:59')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('3', '13', '2021-02-01 17:00:00', '2021-02-01 17:59:59')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('4', '10', '2021-02-01 16:00:00', '2021-02-01 17:00:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('4', '11', '2021-02-01 17:00:00', '2021-02-01 17:59:59')
+
+select
+distinct
+	A.account_id
+from LogInfo A
+join LogInfo B on A.account_id= B.account_id
+where A.ip_address!=B.ip_address and (B.login between A.login and A.logout or B.logout between A.login and A.logout)
+
+
+--Create table  Products (product_id int, low_fats Varchar(20), recyclable varchar(10))
+--DROP table Products
+--insert into Products (product_id, low_fats, recyclable) values ('0', 'Y', 'N')
+--insert into Products (product_id, low_fats, recyclable) values ('1', 'Y', 'Y')
+--insert into Products (product_id, low_fats, recyclable) values ('2', 'N', 'Y')
+--insert into Products (product_id, low_fats, recyclable) values ('3', 'Y', 'Y')
+--insert into Products (product_id, low_fats, recyclable) values ('4', 'N', 'N')
+
+select
+	product_id
+from Products
+where low_fats = 'Y' and recyclable = 'Y'
+
+
+--Create table Tasks (task_id int, subtasks_count int)
+--Create table Executed (task_id int, subtask_id int)
+--Truncate table Tasks
+--insert into Tasks (task_id, subtasks_count) values ('1', '3')
+--insert into Tasks (task_id, subtasks_count) values ('2', '2')
+--insert into Tasks (task_id, subtasks_count) values ('3', '4')
+--Truncate table Executed
+--insert into Executed (task_id, subtask_id) values ('1', '2')
+--insert into Executed (task_id, subtask_id) values ('3', '1')
+--insert into Executed (task_id, subtask_id) values ('3', '2')
+--insert into Executed (task_id, subtask_id) values ('3', '3')
+--insert into Executed (task_id, subtask_id) values ('3', '4')
+----
+with cte_subtasks as 
+(
+	select task_id, 1 as subtask_id from tasks
+	UNION ALL
+	select task_id, subtask_id + 1 from cte_subtasks T1 where subtask_id < (select subtasks_count from Tasks T2 where T1.task_id=T2.task_id)
+)
+select * 
+from cte_subtasks c1 where c1.subtask_id not in (select subtask_id from Executed C2 where c1.task_id=c2.task_id)
+order by 1, 2
+--
+--Create table  Products (product_id int, store varchar(20), price int)
+--DROP table Products
+--insert into Products (product_id, store, price) values ('0', 'store1', '95')
+--insert into Products (product_id, store, price) values ('0', 'store3', '105')
+--insert into Products (product_id, store, price) values ('0', 'store2', '100')
+--insert into Products (product_id, store, price) values ('1', 'store1', '70')
+--insert into Products (product_id, store, price) values ('1', 'store3', '80')
+--
+/* Write your T-SQL query statement below */
+/*
+select
+	distinct product_id,
+	(select price from products sq1 where store='store1' and sq1.product_id = p.product_id) as store1,
+	(select price from products sq1 where store='store2' and sq1.product_id = p.product_id) as store2,
+	(select price from products sq1 where store='store3' and sq1.product_id = p.product_id) as store3
+from Products P
+*/
+
+--Sol-2
+select
+	product_id,
+	max(case when store='store1' then price else null end)  as store1,
+	max(case when store='store2' then price else null end)  as store2,	
+	max(case when store='store3' then price else null end)  as store3
+from Products
+group by product_id
+
+--Create table  Players (player_id int, player_name varchar(20))
+--Create table Championships (year int, Wimbledon int, Fr_open int, US_open int, Au_open int)
+--Truncate table Players
+--insert into Players (player_id, player_name) values ('1', 'Nadal')
+--insert into Players (player_id, player_name) values ('2', 'Federer')
+--insert into Players (player_id, player_name) values ('3', 'Novak')
+--Truncate table Championships
+--insert into Championships (year, Wimbledon, Fr_open, US_open, Au_open) values ('2018', '1', '1', '1', '1')
+--insert into Championships (year, Wimbledon, Fr_open, US_open, Au_open) values ('2019', '1', '1', '2', '2')
+--insert into Championships (year, Wimbledon, Fr_open, US_open, Au_open) values ('2020', '2', '1', '2', '2')
+--
+--> solution-1
+with cte_tournament as (
+	select
+		year, Wimbledon as player_id
+	from Championships 
+	UNION ALL
+	select
+		year, Fr_open as player_id
+	from Championships 
+	UNION ALL
+	select
+		year, US_open as player_id
+	from Championships 
+	UNION ALL
+	select
+		year, Au_open as player_id
+	from Championships
+)
+select 
+	C.player_id,
+	player_name,
+	count(1) as grand_slams_count 
+from cte_tournament C
+join Players P on C.player_id=P.player_id
+group by C.player_id, player_name
+
+--> solution- 2
+--with cte_tournament as (
+--	select tournament, player_id 
+--	from
+--	(	select
+--			wimbledon,
+--			fr_open,
+--			US_open,
+--			Au_open
+--		from Championships
+--	) P
+--	UNPIVOT
+--	(
+--		player_id for tournament in (wimbledon, fr_open, US_open, Au_open)
+--	) as upvt
+--) 
+--select 
+--	C.player_id,
+--	player_name,
+--	count(1) as grand_slams_count 
+--from cte_tournament C
+--join Players P on C.player_id=P.player_id
+--group by C.player_id, player_name
+
+Create table  Employee (employee_id int, department_id int, primary_flag varchar(10))
+DROP table Employee
+insert into Employee (employee_id, department_id, primary_flag) values ('1', '1', 'N')
+insert into Employee (employee_id, department_id, primary_flag) values ('2', '1', 'Y')
+insert into Employee (employee_id, department_id, primary_flag) values ('2', '2', 'N')
+insert into Employee (employee_id, department_id, primary_flag) values ('3', '3', 'N')
+insert into Employee (employee_id, department_id, primary_flag) values ('4', '2', 'N')
+insert into Employee (employee_id, department_id, primary_flag) values ('4', '3', 'Y')
+insert into Employee (employee_id, department_id, primary_flag) values ('4', '4', 'N')
+--
+
+select
+	employee_id,
+	department_id
+from Employee
+where primary_flag='Y'
+UNION
+select
+	employee_id,
+	max(department_id)
+from Employee
+group by employee_id
+having count(department_id) = 1
+
+--Create table Products (product_id int, store1 int, store2 int, store3 int)
+--DROP table Products
+--insert into Products (product_id, store1, store2, store3) values ('0', '95', '100', '105')
+--insert into Products (product_id, store1, store2, store3) values ('1', '70', null, '80')
+--
+with cte_products as (
+	select 
+		product_id,
+		'store1' as store,
+		store1 as price
+	from Products
+	UNION ALL
+	select 
+		product_id,
+		'store2' as store,
+		store2 as price
+	from Products
+	UNION ALL
+	select 
+		product_id,
+		'store3' as store,
+		store3 as price
+	from Products
+) select * from cte_products where price is not null order by 1, 2
+
+
+Create table  Playback(session_id int,customer_id int,start_time int,end_time int)
+Create table Ads (ad_id int, customer_id int, timestamp int)
+Truncate table Playback
+insert into Playback (session_id, customer_id, start_time, end_time) values ('1', '1', '1', '5')
+insert into Playback (session_id, customer_id, start_time, end_time) values ('2', '1', '15', '23')
+insert into Playback (session_id, customer_id, start_time, end_time) values ('3', '2', '10', '12')
+insert into Playback (session_id, customer_id, start_time, end_time) values ('4', '2', '17', '28')
+insert into Playback (session_id, customer_id, start_time, end_time) values ('5', '2', '2', '8')
+DROP table Ads
+insert into Ads (ad_id, customer_id, timestamp) values ('1', '1', '5')
+insert into Ads (ad_id, customer_id, timestamp) values ('2', '2', '17')
+insert into Ads (ad_id, customer_id, timestamp) values ('3', '2', '20')
+--
+with cte_ads as (
+	select distinct
+		session_id
+	from Playback P
+	join Ads A on P.customer_id=A.customer_id
+	where timestamp between start_time and end_time
+)
+select session_id from Playback where session_id not in (select session_id from cte_ads)
+
+--Create table  Contests (contest_id int, gold_medal int, silver_medal int, bronze_medal int)
+--Create table  Users (user_id int, mail varchar(50), name varchar(30))
+--DROP table Contests
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('190', '1', '5', '2')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('191', '2', '3', '5')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('192', '5', '2', '3')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('193', '1', '3', '5')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('194', '4', '5', '2')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('195', '4', '2', '1')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('196', '1', '5', '2')
+--DROP table Users
+--insert into Users (user_id, mail, name) values ('1', 'sarah@leetcode.com', 'Sarah')
+--insert into Users (user_id, mail, name) values ('2', 'bob@leetcode.com', 'Bob')
+--insert into Users (user_id, mail, name) values ('3', 'alice@leetcode.com', 'Alice')
+--insert into Users (user_id, mail, name) values ('4', 'hercy@leetcode.com', 'Hercy')
+--insert into Users (user_id, mail, name) values ('5', 'quarz@leetcode.com', 'Quarz')
+--
+with cte1 as (
+	select
+		contest_id,
+		medals,
+		user_id
+	from Contests
+	unpivot (user_id for medals in (gold_medal, silver_medal, bronze_medal)) as unpvt
+), cte2 as (
+	select
+		*,
+		contest_id - LAG(contest_id, 2) over (partition by user_id order by contest_id) as diff
+	from cte1
+), cte3 as (
+	select user_id
+	from cte2
+	where diff = 2
+	UNION
+	select user_id
+	from cte1
+	group by user_id, medals
+	having count(user_id) >= 3 and  medals= 'gold_medal'
+)
+select name, mail
+from cte3 c join users u on c.user_id=u.user_id
+
+--Create table Customers (customer_id int, year int, revenue int)
+--DROP table Customers
+--insert into Customers (customer_id, year, revenue) values ('1', '2018', '50')
+--insert into Customers (customer_id, year, revenue) values ('1', '2021', '30')
+--insert into Customers (customer_id, year, revenue) values ('1', '2020', '70')
+--insert into Customers (customer_id, year, revenue) values ('2', '2021', '-50')
+--insert into Customers (customer_id, year, revenue) values ('3', '2018', '10')
+--insert into Customers (customer_id, year, revenue) values ('3', '2016', '50')
+--insert into Customers (customer_id, year, revenue) values ('4', '2021', '20')
+
+with cte as (
+select
+	customer_id,
+	revenue
+from Customers
+where year= 2021
+)
+select customer_id from cte where revenue > 0
+
+--Create table Transactions (transaction_id int, day datetime, amount int)
+--DROP table Transactions
+--insert into Transactions (transaction_id, day, amount) values ('8', '2021-4-3 15:57:28', '57')
+--insert into Transactions (transaction_id, day, amount) values ('9', '2021-4-28 08:47:25', '21')
+--insert into Transactions (transaction_id, day, amount) values ('1', '2021-4-29 13:28:30', '58')
+--insert into Transactions (transaction_id, day, amount) values ('5', '2021-4-28 16:39:59', '40')
+--insert into Transactions (transaction_id, day, amount) values ('6', '2021-4-29 23:39:28', '58')
+
+with cte1 as (
+	select
+		transaction_id,
+		convert(varchar(10), day, 121) as date,
+		amount
+	from Transactions
+), cte2 as  (
+	select 
+		date,
+		max(amount) as max_amount
+	from cte1
+	group by date
+) 
+select 
+	transaction_id
+from cte1 c1 where amount= (select max_amount from cte2  c2 where c1.date=c2.date) 
+order by transaction_id
+
+--Create table  Days (day date)
+--Truncate table Days
+--insert into Days (day) values ('2022-04-12')
+--insert into Days (day) values ('2021-08-09')
+--insert into Days (day) values ('2020-06-26')
+
+--
+select
+	datename(weekday, day) + ', ' + 
+	datename(month, day) + ' ' + 
+	cast(day(day) as varchar(3)) + ', ' + 
+	cast(year(day) as varchar(5)) as day
+from days
+
+select format(day, 'D' ,'en-US') from days
+
+--Create table OrdersDetails (order_id int, product_id int, quantity int)
+--Truncate table OrdersDetails
+--insert into OrdersDetails (order_id, product_id, quantity) values ('1', '1', '12')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('1', '2', '10')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('1', '3', '15')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('2', '1', '8')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('2', '4', '4')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('2', '5', '6')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('3', '3', '5')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('3', '4', '18')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('4', '5', '2')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('4', '6', '8')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('5', '7', '9')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('5', '8', '9')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('3', '9', '20')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('2', '9', '4')
+
+with cte_avg as (
+	select
+		sum(quantity) * 1.00 / count(distinct product_id) as avg_quantity
+	from OrdersDetails
+	group by order_id
+)
+select distinct c1.order_id
+from OrdersDetails c1
+where c1.quantity > (select max(avg_quantity) from cte_avg)
+
+<<<<<<< working
+--
+with cte_interval as (
+	select 
+		user_id,
+		visit_date,
+		isnull(LEAD(visit_date, 1) over (partition by user_id order by visit_date), '2021-01-01') as nxt_date
+	from UserVisits
+) 
+select 
+	user_id, 
+	max(DATEDIFF(day, visit_date, nxt_date)) as biggest_window
+from cte_interval
+group by user_id
+order by user_id
+
+--
+Create table Boxes (box_id int, chest_id int, apple_count int, orange_count int)
+Create table Chests (chest_id int, apple_count int, orange_count int)
+Truncate table Boxes
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('2', null, '6', '15')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('18', '14', '4', '15')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('19', '3', '8', '4')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('12', '2', '19', '20')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('20', '6', '12', '9')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('8', '6', '9', '9')
+insert into Boxes (box_id, chest_id, apple_count, orange_count) values ('3', '14', '16', '7')
+Truncate table Chests
+insert into Chests (chest_id, apple_count, orange_count) values ('6', '5', '6')
+insert into Chests (chest_id, apple_count, orange_count) values ('14', '20', '10')
+insert into Chests (chest_id, apple_count, orange_count) values ('2', '8', '8')
+insert into Chests (chest_id, apple_count, orange_count) values ('3', '19', '4')
+insert into Chests (chest_id, apple_count, orange_count) values ('16', '19', '19')
+--
+select sum(apple_count) as apple_count, sum(orange_count) as orange_count
+from (
+	select
+		isnull(b.apple_count, 0) + isnull(c.apple_count, 0) as apple_count,
+		isnull(b.orange_count, 0) + isnull(c.orange_count, 0) as orange_count
+	from Boxes B
+	left join Chests C on B.chest_id=C.chest_id
+) sq 
+--
+Create table  Followers(user_id int, follower_id int)
+Truncate table Followers
+insert into Followers (user_id, follower_id) values ('0', '1')
+insert into Followers (user_id, follower_id) values ('1', '0')
+insert into Followers (user_id, follower_id) values ('2', '0')
+insert into Followers (user_id, follower_id) values ('2', '1')
+--
+
+select
+	user_id,
+	count(follower_id) as followers_count
+from Followers F
+group by user_id
+order by 1
+
+--
+--Create table Employees(employee_id int, name varchar(20), reports_to int, age int)
+--DROP table Employees
+--insert into Employees (employee_id, name, reports_to, age) values ('9', 'Hercy', Null , '43')
+--insert into Employees (employee_id, name, reports_to, age) values ('6', 'Alice', '9', '41')
+--insert into Employees (employee_id, name, reports_to, age) values ('4', 'Bob', '9', '36')
+--insert into Employees (employee_id, name, reports_to, age) values ('2', 'Winston', Null, '37')
+
+--
+with cte as (
+	select
+		E.age as employee_age,
+		M.employee_id as manager_id,
+		M.name as manager_name
+	from Employees E
+	left join Employees M on M.employee_id = E.reports_to
+	where M.employee_id is not null
+)
+select 
+	manager_id as employee_id,
+	manager_name as name,
+	count(1) as reports_count,
+	cast(ROUND(avg(employee_age * 1.00), 0) as int) as average_age 
+from cte
+group by manager_id, manager_name
+order by manager_id
+
+--
+	select
+		M.employee_id,
+		M.name,
+		count(1) as reports_count,
+		cast(ROUND(avg(E.age * 1.00), 0) as int) as average_age 
+	from Employees E
+	left join Employees M on M.employee_id = E.reports_to
+	where M.employee_id is not null
+	group by M.employee_id, M.name
+	order by M.employee_id
+
+--Create table  Employees(emp_id int, event_day date, in_time int, out_time int)
+--DROP table Employees
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('1', '2020-11-28', '4', '32')
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('1', '2020-11-28', '55', '200')
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('1', '2020-12-3', '1', '42')
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('2', '2020-11-28', '3', '33')
+--insert into Employees (emp_id, event_day, in_time, out_time) values ('2', '2020-12-9', '47', '74')
+
+select
+	event_day as day,
+	emp_id,
+	sum(out_time - in_time) as total_time
+from Employees
+group by 	emp_id, event_day
+
+--Create table  LogInfo (account_id int, ip_address int, login datetime, logout datetime)
+--Truncate table LogInfo
+--insert into LogInfo (account_id, ip_address, login, logout) values ('1', '1', '2021-02-01 09:00:00', '2021-02-01 09:30:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('1', '2', '2021-02-01 08:00:00', '2021-02-01 11:30:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('2', '6', '2021-02-01 20:30:00', '2021-02-01 22:00:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('2', '7', '2021-02-02 20:30:00', '2021-02-02 22:00:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('3', '9', '2021-02-01 16:00:00', '2021-02-01 16:59:59')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('3', '13', '2021-02-01 17:00:00', '2021-02-01 17:59:59')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('4', '10', '2021-02-01 16:00:00', '2021-02-01 17:00:00')
+--insert into LogInfo (account_id, ip_address, login, logout) values ('4', '11', '2021-02-01 17:00:00', '2021-02-01 17:59:59')
+
+select
+distinct
+	A.account_id
+from LogInfo A
+join LogInfo B on A.account_id= B.account_id
+where A.ip_address!=B.ip_address and (B.login between A.login and A.logout or B.logout between A.login and A.logout)
+
+
+--Create table  Products (product_id int, low_fats Varchar(20), recyclable varchar(10))
+--DROP table Products
+--insert into Products (product_id, low_fats, recyclable) values ('0', 'Y', 'N')
+--insert into Products (product_id, low_fats, recyclable) values ('1', 'Y', 'Y')
+--insert into Products (product_id, low_fats, recyclable) values ('2', 'N', 'Y')
+--insert into Products (product_id, low_fats, recyclable) values ('3', 'Y', 'Y')
+--insert into Products (product_id, low_fats, recyclable) values ('4', 'N', 'N')
+
+select
+	product_id
+from Products
+where low_fats = 'Y' and recyclable = 'Y'
+
+
+--Create table Tasks (task_id int, subtasks_count int)
+--Create table Executed (task_id int, subtask_id int)
+--Truncate table Tasks
+--insert into Tasks (task_id, subtasks_count) values ('1', '3')
+--insert into Tasks (task_id, subtasks_count) values ('2', '2')
+--insert into Tasks (task_id, subtasks_count) values ('3', '4')
+--Truncate table Executed
+--insert into Executed (task_id, subtask_id) values ('1', '2')
+--insert into Executed (task_id, subtask_id) values ('3', '1')
+--insert into Executed (task_id, subtask_id) values ('3', '2')
+--insert into Executed (task_id, subtask_id) values ('3', '3')
+--insert into Executed (task_id, subtask_id) values ('3', '4')
+----
+with cte_subtasks as 
+(
+	select task_id, 1 as subtask_id from tasks
+	UNION ALL
+	select task_id, subtask_id + 1 from cte_subtasks T1 where subtask_id < (select subtasks_count from Tasks T2 where T1.task_id=T2.task_id)
+)
+select * 
+from cte_subtasks c1 where c1.subtask_id not in (select subtask_id from Executed C2 where c1.task_id=c2.task_id)
+order by 1, 2
+--
+--Create table  Products (product_id int, store varchar(20), price int)
+--DROP table Products
+--insert into Products (product_id, store, price) values ('0', 'store1', '95')
+--insert into Products (product_id, store, price) values ('0', 'store3', '105')
+--insert into Products (product_id, store, price) values ('0', 'store2', '100')
+--insert into Products (product_id, store, price) values ('1', 'store1', '70')
+--insert into Products (product_id, store, price) values ('1', 'store3', '80')
+--
+/* Write your T-SQL query statement below */
+/*
+select
+	distinct product_id,
+	(select price from products sq1 where store='store1' and sq1.product_id = p.product_id) as store1,
+	(select price from products sq1 where store='store2' and sq1.product_id = p.product_id) as store2,
+	(select price from products sq1 where store='store3' and sq1.product_id = p.product_id) as store3
+from Products P
+*/
+
+--Sol-2
+select
+	product_id,
+	max(case when store='store1' then price else null end)  as store1,
+	max(case when store='store2' then price else null end)  as store2,	
+	max(case when store='store3' then price else null end)  as store3
+from Products
+group by product_id
+
+--Create table  Players (player_id int, player_name varchar(20))
+--Create table Championships (year int, Wimbledon int, Fr_open int, US_open int, Au_open int)
+--Truncate table Players
+--insert into Players (player_id, player_name) values ('1', 'Nadal')
+--insert into Players (player_id, player_name) values ('2', 'Federer')
+--insert into Players (player_id, player_name) values ('3', 'Novak')
+--Truncate table Championships
+--insert into Championships (year, Wimbledon, Fr_open, US_open, Au_open) values ('2018', '1', '1', '1', '1')
+--insert into Championships (year, Wimbledon, Fr_open, US_open, Au_open) values ('2019', '1', '1', '2', '2')
+--insert into Championships (year, Wimbledon, Fr_open, US_open, Au_open) values ('2020', '2', '1', '2', '2')
+--
+--> solution-1
+with cte_tournament as (
+	select
+		year, Wimbledon as player_id
+	from Championships 
+	UNION ALL
+	select
+		year, Fr_open as player_id
+	from Championships 
+	UNION ALL
+	select
+		year, US_open as player_id
+	from Championships 
+	UNION ALL
+	select
+		year, Au_open as player_id
+	from Championships
+)
+select 
+	C.player_id,
+	player_name,
+	count(1) as grand_slams_count 
+from cte_tournament C
+join Players P on C.player_id=P.player_id
+group by C.player_id, player_name
+
+--> solution- 2
+--with cte_tournament as (
+--	select tournament, player_id 
+--	from
+--	(	select
+--			wimbledon,
+--			fr_open,
+--			US_open,
+--			Au_open
+--		from Championships
+--	) P
+--	UNPIVOT
+--	(
+--		player_id for tournament in (wimbledon, fr_open, US_open, Au_open)
+--	) as upvt
+--) 
+--select 
+--	C.player_id,
+--	player_name,
+--	count(1) as grand_slams_count 
+--from cte_tournament C
+--join Players P on C.player_id=P.player_id
+--group by C.player_id, player_name
+
+Create table  Employee (employee_id int, department_id int, primary_flag varchar(10))
+DROP table Employee
+insert into Employee (employee_id, department_id, primary_flag) values ('1', '1', 'N')
+insert into Employee (employee_id, department_id, primary_flag) values ('2', '1', 'Y')
+insert into Employee (employee_id, department_id, primary_flag) values ('2', '2', 'N')
+insert into Employee (employee_id, department_id, primary_flag) values ('3', '3', 'N')
+insert into Employee (employee_id, department_id, primary_flag) values ('4', '2', 'N')
+insert into Employee (employee_id, department_id, primary_flag) values ('4', '3', 'Y')
+insert into Employee (employee_id, department_id, primary_flag) values ('4', '4', 'N')
+--
+
+select
+	employee_id,
+	department_id
+from Employee
+where primary_flag='Y'
+UNION
+select
+	employee_id,
+	max(department_id)
+from Employee
+group by employee_id
+having count(department_id) = 1
+
+--Create table Products (product_id int, store1 int, store2 int, store3 int)
+--DROP table Products
+--insert into Products (product_id, store1, store2, store3) values ('0', '95', '100', '105')
+--insert into Products (product_id, store1, store2, store3) values ('1', '70', null, '80')
+--
+with cte_products as (
+	select 
+		product_id,
+		'store1' as store,
+		store1 as price
+	from Products
+	UNION ALL
+	select 
+		product_id,
+		'store2' as store,
+		store2 as price
+	from Products
+	UNION ALL
+	select 
+		product_id,
+		'store3' as store,
+		store3 as price
+	from Products
+) select * from cte_products where price is not null order by 1, 2
+
+
+Create table  Playback(session_id int,customer_id int,start_time int,end_time int)
+Create table Ads (ad_id int, customer_id int, timestamp int)
+Truncate table Playback
+insert into Playback (session_id, customer_id, start_time, end_time) values ('1', '1', '1', '5')
+insert into Playback (session_id, customer_id, start_time, end_time) values ('2', '1', '15', '23')
+insert into Playback (session_id, customer_id, start_time, end_time) values ('3', '2', '10', '12')
+insert into Playback (session_id, customer_id, start_time, end_time) values ('4', '2', '17', '28')
+insert into Playback (session_id, customer_id, start_time, end_time) values ('5', '2', '2', '8')
+DROP table Ads
+insert into Ads (ad_id, customer_id, timestamp) values ('1', '1', '5')
+insert into Ads (ad_id, customer_id, timestamp) values ('2', '2', '17')
+insert into Ads (ad_id, customer_id, timestamp) values ('3', '2', '20')
+--
+with cte_ads as (
+	select distinct
+		session_id
+	from Playback P
+	join Ads A on P.customer_id=A.customer_id
+	where timestamp between start_time and end_time
+)
+select session_id from Playback where session_id not in (select session_id from cte_ads)
+
+--Create table  Contests (contest_id int, gold_medal int, silver_medal int, bronze_medal int)
+--Create table  Users (user_id int, mail varchar(50), name varchar(30))
+--DROP table Contests
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('190', '1', '5', '2')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('191', '2', '3', '5')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('192', '5', '2', '3')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('193', '1', '3', '5')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('194', '4', '5', '2')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('195', '4', '2', '1')
+--insert into Contests (contest_id, gold_medal, silver_medal, bronze_medal) values ('196', '1', '5', '2')
+--DROP table Users
+--insert into Users (user_id, mail, name) values ('1', 'sarah@leetcode.com', 'Sarah')
+--insert into Users (user_id, mail, name) values ('2', 'bob@leetcode.com', 'Bob')
+--insert into Users (user_id, mail, name) values ('3', 'alice@leetcode.com', 'Alice')
+--insert into Users (user_id, mail, name) values ('4', 'hercy@leetcode.com', 'Hercy')
+--insert into Users (user_id, mail, name) values ('5', 'quarz@leetcode.com', 'Quarz')
+--
+with cte1 as (
+	select
+		contest_id,
+		medals,
+		user_id
+	from Contests
+	unpivot (user_id for medals in (gold_medal, silver_medal, bronze_medal)) as unpvt
+), cte2 as (
+	select
+		*,
+		contest_id - LAG(contest_id, 2) over (partition by user_id order by contest_id) as diff
+	from cte1
+), cte3 as (
+	select user_id
+	from cte2
+	where diff = 2
+	UNION
+	select user_id
+	from cte1
+	group by user_id, medals
+	having count(user_id) >= 3 and  medals= 'gold_medal'
+)
+select name, mail
+from cte3 c join users u on c.user_id=u.user_id
+
+--Create table Customers (customer_id int, year int, revenue int)
+--DROP table Customers
+--insert into Customers (customer_id, year, revenue) values ('1', '2018', '50')
+--insert into Customers (customer_id, year, revenue) values ('1', '2021', '30')
+--insert into Customers (customer_id, year, revenue) values ('1', '2020', '70')
+--insert into Customers (customer_id, year, revenue) values ('2', '2021', '-50')
+--insert into Customers (customer_id, year, revenue) values ('3', '2018', '10')
+--insert into Customers (customer_id, year, revenue) values ('3', '2016', '50')
+--insert into Customers (customer_id, year, revenue) values ('4', '2021', '20')
+
+with cte as (
+select
+	customer_id,
+	revenue
+from Customers
+where year= 2021
+)
+select customer_id from cte where revenue > 0
+
+--Create table Transactions (transaction_id int, day datetime, amount int)
+--DROP table Transactions
+--insert into Transactions (transaction_id, day, amount) values ('8', '2021-4-3 15:57:28', '57')
+--insert into Transactions (transaction_id, day, amount) values ('9', '2021-4-28 08:47:25', '21')
+--insert into Transactions (transaction_id, day, amount) values ('1', '2021-4-29 13:28:30', '58')
+--insert into Transactions (transaction_id, day, amount) values ('5', '2021-4-28 16:39:59', '40')
+--insert into Transactions (transaction_id, day, amount) values ('6', '2021-4-29 23:39:28', '58')
+
+with cte1 as (
+	select
+		transaction_id,
+		convert(varchar(10), day, 121) as date,
+		amount
+	from Transactions
+), cte2 as  (
+	select 
+		date,
+		max(amount) as max_amount
+	from cte1
+	group by date
+) 
+select 
+	transaction_id
+from cte1 c1 where amount= (select max_amount from cte2  c2 where c1.date=c2.date) 
+order by transaction_id
+
+--Create table  Days (day date)
+--Truncate table Days
+--insert into Days (day) values ('2022-04-12')
+--insert into Days (day) values ('2021-08-09')
+--insert into Days (day) values ('2020-06-26')
+
+--
+select
+	datename(weekday, day) + ', ' + 
+	datename(month, day) + ' ' + 
+	cast(day(day) as varchar(3)) + ', ' + 
+	cast(year(day) as varchar(5)) as day
+from days
+
+select format(day, 'D' ,'en-US') from days
+
+--Create table OrdersDetails (order_id int, product_id int, quantity int)
+--Truncate table OrdersDetails
+--insert into OrdersDetails (order_id, product_id, quantity) values ('1', '1', '12')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('1', '2', '10')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('1', '3', '15')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('2', '1', '8')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('2', '4', '4')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('2', '5', '6')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('3', '3', '5')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('3', '4', '18')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('4', '5', '2')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('4', '6', '8')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('5', '7', '9')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('5', '8', '9')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('3', '9', '20')
+--insert into OrdersDetails (order_id, product_id, quantity) values ('2', '9', '4')
+
+with cte_avg as (
+	select
+		sum(quantity) * 1.00 / count(distinct product_id) as avg_quantity
+	from OrdersDetails
+	group by order_id
+)
+select distinct c1.order_id
+from OrdersDetails c1
+where c1.quantity > (select max(avg_quantity) from cte_avg)
+=======
+>>>>>>> main
+
+Create table  Employees (employee_id int, name varchar(30), salary int)
+DROP table Employees
+insert into Employees (employee_id, name, salary) values ('2', 'Meir', '3000')
+insert into Employees (employee_id, name, salary) values ('3', 'Michael', '3800')
+insert into Employees (employee_id, name, salary) values ('7', 'Addilyn', '7400')
+insert into Employees (employee_id, name, salary) values ('8', 'Juan', '6100')
+insert into Employees (employee_id, name, salary) values ('9', 'Kannon', '7700')
+insert into Employees (employee_id, name, salary) values ('3', 'michael', '3800')
+--
+
+select
+	employee_id,
+	case when employee_id % 2 != 0 and name not like 'M%' then salary else 0 end as bonus
+from Employees
+order by employee_id
+
+--Create table Employees (employee_id int, name varchar(30), salary int)
+--DROP table Employees
+--insert into Employees (employee_id, name, salary) values ('2', 'Meir', '3000')
+--insert into Employees (employee_id, name, salary) values ('3', 'Michael', '3000')
+--insert into Employees (employee_id, name, salary) values ('7', 'Addilyn', '7400')
+--insert into Employees (employee_id, name, salary) values ('8', 'Juan', '6100')
+--insert into Employees (employee_id, name, salary) values ('9', 'Kannon', '7400')
+
+with cte_salary_cnt as (
+	select
+		salary,
+		count(1) as salary_cnt
+	from Employees
+	group by salary
+), cte_emp_salary as (
+	select
+		E.*,
+		salary_cnt
+	from Employees E
+	join cte_salary_cnt c on E.salary=c.salary
+)
+select 
+	employee_id,
+	name,
+	salary,
+	dense_rank() over (order by salary) as team_id
+from cte_emp_salary 
+where salary_cnt <> 1
+order by team_id, employee_id
+
+Create table Logins (user_id int, time_stamp datetime)
+Truncate table Logins
+insert into Logins (user_id, time_stamp) values ('6', '2020-06-30 15:06:07')
+insert into Logins (user_id, time_stamp) values ('6', '2021-04-21 14:06:06')
+insert into Logins (user_id, time_stamp) values ('6', '2019-03-07 00:18:15')
+insert into Logins (user_id, time_stamp) values ('8', '2020-02-01 05:10:53')
+insert into Logins (user_id, time_stamp) values ('8', '2020-12-30 00:46:50')
+insert into Logins (user_id, time_stamp) values ('2', '2020-01-16 02:49:50')
+insert into Logins (user_id, time_stamp) values ('2', '2019-08-25 07:59:08')
+insert into Logins (user_id, time_stamp) values ('14', '2019-07-14 09:00:00')
+insert into Logins (user_id, time_stamp) values ('14', '2021-01-06 11:59:59')
+
+select user_id, time_stamp as last_stamp
+from (
+	select
+		user_id,
+		time_stamp,
+		DENSE_RANK() over (partition by user_id order by time_stamp desc) as rn
+	from Logins
+	where year(time_stamp) = 2020
+) sq where rn= 1
+
+
+--Create table  Accounts (account_id int, income int)
+--Truncate table Accounts
+--insert into Accounts (account_id, income) values ('3', '108939')
+--insert into Accounts (account_id, income) values ('2', '12747')
+--insert into Accounts (account_id, income) values ('8', '87709')
+--insert into Accounts (account_id, income) values ('6', '91796')
+
+--with cte_accounts as (
+--	select
+--		account_id,
+--		case when income < 20000 then 'Low Salary'
+--				when income > 50000 then 'High Salary'
+--				else 'Average Salary' end as category
+--	from Accounts
+--), cte_account_count as (
+--	select category, count(account_id) as accounts_count
+--	from cte_accounts group by category
+--), 
+
+with cte_category as (
+	select 'Low Salary' as category union select 'Average Salary' union select 'High Salary'
+)
+select cc.category, isnull(ca.accounts_count, 0) as accounts_count
+from cte_category cc 
+left join 
+	( select category, count(1) as accounts_count from
+		( 
+			select
+				case when income < 20000 then 'Low Salary'
+						when income > 50000 then 'High Salary'
+						WHEN income BETWEEN 20000 AND 50000 THEN 'Average Salary'
+				end as category
+			from Accounts
+		) sq group by category
+	) ca on cc.category=ca.category
+
+select
+	'Low Salary' as category, count(1) as accounts_count
+from accounts where income < 20000
+UNION
+select
+	'Average Salary' as category, count(1) as accounts_count
+from accounts where income BETWEEN 20000 AND 50000
+UNION
+select
+	'High Salary' as category, count(1) as accounts_count
+from accounts where income > 50000 

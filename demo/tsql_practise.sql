@@ -61,9 +61,17 @@ END CATCH
 ----
 -- Transaction with Commit and Rollback
 -- Transaction with SavePoint ( Commit and Rollback Included)
+drop table Customer
+create table Customer (id int, name varchar(20))
+insert into Customer values (1, 'Mark'), (2, 'Jim')
 
 select * from Customer
-
+---
+begin transaction 
+	delete from Customer where id = 2;
+	print @@trancount
+	commit
+--
 Begin Transaction
 	save transaction s1
 		delete from Customer where customer_id=2
@@ -74,7 +82,7 @@ Begin Transaction
 
 	rollback transaction s2
 	commit
-
+end
 --
 -- Cursor - Update or select record one by one from a table
 -->> Declare Cursor -> Open -> Fetch (Pointer) -> Close (Terminate the cursor) -> Deallocate
@@ -198,3 +206,5 @@ begin
 end
 
 insert into tbl_employees values (6, 'Test', '1000', 40)
+
+select * from employee
